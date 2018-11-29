@@ -3,14 +3,29 @@ import org.firmata.*;
 import processing.serial.*;
 
 Serial myPort;  // Create object from Serial class
-float temp;     // Temperature from DHT11
-float humidity; // Humidity from DHT11
+int temp;     // Temperature from DHT11
+int humidity; // Humidity from DHT11
 
-void setup()
-{
+Table table;
+
+void setup() {
+  // size:
   size(720, 360);
+  // serial:
   String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, portName, 9600);
+  // table:
+  
+  if (new File("data/surveillance.csv").exists()) {
+    table = new Table();
+    
+    table.addColumn("time");
+    table.addColumn("temperature");
+    table.addColumn("humidity");
+  }
+  else {
+    table = loadTable("data/surveillance.csv", "header");
+  }
 }
 
 void draw()
@@ -20,8 +35,15 @@ void draw()
     String inString = myPort.readStringUntil('\n');
     float[] vals = float(split(inString, " "));
     println("Temperatur: ",vals[0], "Fugtighed: ", vals[1]);
-    temp = vals[0];
-    humidity = vals[1];
+    temp = round(vals[0]);
+    humidity = round(vals[1]);
+    TableRow newRow = table.addRow();
+    String time = "" + hour() + ":" + Integer.toString(minute())  + ":" + Integer.toString(second()) + "_" + Integer.toString(day()) + "/" + Integer.toString(month()) + "-" + Integer.toString(year());
+    newRow.setString("time", time);
+    newRow.setInt("temperature", temp);
+    newRow.setInt("humidity", humidity);
+    
+    saveTable(table, "data/surveillance.csv");
   }
   //Humidity
   strokeWeight(1);
